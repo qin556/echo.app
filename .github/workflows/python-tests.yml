@@ -1,0 +1,11 @@
+- name: Install dependencies
+  run: |
+    python -m pip install --upgrade pip
+    pip install --verbose -r requirements.txt  # 增加 --verbose 显示安装细节
+
+- name: Check pytest installation
+  run: |
+    # 查看 pip 安装的可执行文件路径
+    pip show pytest  # 确认 pytest 是否在安装列表中
+    which pytest     # 查看 pytest 可执行文件路径（Linux 命令）
+    echo $PATH       # 查看环境变量是否包含该路径
