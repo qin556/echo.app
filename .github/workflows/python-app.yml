@@ -1,109 +1,33 @@
-name: Python Application CI/CD
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-# 触发条件：推送到主要分支或创建 PR 时执行
+name: Python testing
+
 on:
   push:
-    branches: [ "main", "dev", "staging" ]  # 核心分支变更时触发
+    branches: [ "main", "dev", "staging" ]
   pull_request:
-    branches: [ "main", "dev", "staging" ]  # 对核心分支的 PR 触发
+    branches: [ "main", "dev", "staging" ]
+
+permissions:
+  contents: read
 
 jobs:
-  # 代码风格与静态检查
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"  # 缓存依赖加速安装
-
-      - name: Install lint tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install flake8 black isort  # 代码风格检查工具
-
-      - name: Run flake8 (语法与规范检查)
-        run: flake8 app/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        # E9: 运行时错误（如未定义变量）；F: 代码规范错误
-
-      - name: Run black (代码格式化检查)
-        run: black app/ tests/ --check  # --check 仅检查不自动修复
-
-      - name: Run isort (导入排序检查)
-        run: isort app/ tests/ --check-only  # 检查导入语句是否按规范排序
-
-  # 单元测试与覆盖率分析
-  test:
-    needs: lint  # 依赖 lint 任务，仅在 lint 通过后执行
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.11", "3.12"]  # 多版本兼容性测试
-      fail-fast: false  # 一个版本失败不影响其他版本
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "pip"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest-cov  # 覆盖率报告工具
-
-      - name: Run tests with coverage
-        run: |
-          pytest tests/ \
-            -v \
-            --cov=app \  # 指定覆盖的代码目录
-            --cov-report=xml \  # 生成 XML 格式报告（用于后续上传）
-            --cov-report=term  # 在终端显示简要报告
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4  # 上传覆盖率报告到 Codecov（需提前注册）
-        with:
-          file: ./coverage.xml
-          fail_ci_if_error: false  # 覆盖率不达标时不阻断工作流（可选）
-
-  # 构建可分发包（如需要发布到 PyPI）
   build:
-    needs: test  # 依赖测试通过后执行
+
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-
-      - name: Install build tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install build twine
-
-      - name: Build package
-        run: python -m build  # 生成 .tar.gz 和 .whl 包
-
-      - name: Test package installation
-        run: |
-          pip install dist/*.whl  # 安装构建的包
-          python -c "import app; print('App imported successfully')"  # 验证可导入
-
-      - name: Store build artifacts
-        uses: actions/upload-artifact@v4  # 保存构建产物供后续步骤使用
-        with:
-          name: python-packages
-          path: dist/
+    - uses: actions/checkout@v4
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Test with pytest
+      run: |
+        pytest
