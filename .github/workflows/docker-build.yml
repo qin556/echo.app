@@ -1,16 +1,26 @@
-ame: Docker Image CI
+name: Docker Build  # 工作流名称
 
+# 触发条件：与 Python 测试一致，确保每次变更都验证构建
 on:
+  push:
+    branches: ['**']
   pull_request:
-    branches: [ "main", "dev", "staging" ]
+    branches: ['**']
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag python-calc-app:$(date +%s)
+    - uses: actions/checkout@v4  # 拉取代码
+    
+    - name: Set up Docker Buildx  # 初始化 Docker 构建工具
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build and push  # 构建 Docker 镜像（仅构建，不推送）
+      uses: docker/build-push-action@v5
+      with:
+        context: .  # 构建上下文：仓库根目录
+        push: false  # 首次配置仅验证构建，暂不推送镜像（后续需推送可改为 true，并添加镜像仓库认证）
+        tags: my-app:latest  # 镜像标签（自定义名称）
+        cache-from: type=gha  # 利用 GitHub 缓存加速构建
+        cache-to: type=gha,mode=max
