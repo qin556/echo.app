@@ -1,0 +1,2 @@
+git checkout dev
+git pull origin dev  # 确保本地 dev 与远程同步
