@@ -1,0 +1,4 @@
+- name: Install dependencies
+  run: |
+    python -m pip install --upgrade pip
+    pip install --verbose -r requirements.txt  # 增加 --verbose 显示安装细节
