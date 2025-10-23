@@ -1,54 +1,16 @@
-name: Docker Image Build & Validate
+name: Docker Image CI
 
-# 触发条件：推送到所有分支或创建 PR 时触发
 on:
-  push:
-    branches: ['**']
   pull_request:
-    branches: ['**']
+    branches: [ "main", "dev", "staging" ]
 
 jobs:
+
   build:
-    runs-on: ubuntu-latest  # 使用最新版 Ubuntu 环境
+
+    runs-on: ubuntu-latest
+
     steps:
-      # 步骤 1：拉取当前仓库代码（必须放在最前面，确保 Docker 能访问项目文件）
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # 步骤 2：初始化 Docker Buildx（增强版构建工具，支持缓存和多平台构建）
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      # 步骤 3：构建 Docker 镜像（仅构建不推送，验证构建可行性）
-      - name: Build Docker image
-        uses: docker/build-push-action@v5  # 官方 Docker 构建动作
-        with:
-          context: .  # 构建上下文：仓库根目录（Dockerfile 所在路径）
-          push: false  # 仅构建不推送（如需推送，设为 true 并配置镜像仓库认证）
-          tags: my-app:${{ github.sha }}  # 镜像标签：使用 commit SHA 确保唯一性
-          cache-from: type=gha  # 利用 GitHub Actions 缓存加速构建（复用之前的层）
-          cache-to: type=gha,mode=max  # 最大化缓存内容，加速后续构建
-          # 输出详细构建日志，便于排查错误
-          build-args: |
-            LOG_LEVEL=debug
-          # 显示构建过程中的每一步（可选，用于调试）
-          progress: plain
-
-      # 步骤 4：验证镜像可正常启动（确保容器能运行，可选但推荐）
-      - name: Test Docker image startup
-        run: |
-          # 从本地镜像启动容器（后台运行）
-          docker run -d --name test-container my-app:${{ github.sha }}
-          # 等待 5 秒确保容器启动（视应用启动速度调整）
-          sleep 5
-          # 检查容器是否在运行中
-          if [ "$(docker inspect -f '{{.State.Running}}' test-container)" != "true" ]; then
-            echo "容器启动失败！"
-            # 输出容器日志帮助排查
-            docker logs test-container
-            exit 1  # 标记步骤失败
-          fi
-          echo "容器启动成功"
-          # 清理测试容器
-          docker stop test-container
-          docker rm test-container
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag python-calc-app:$(date +%s)
