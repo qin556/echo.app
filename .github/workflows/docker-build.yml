@@ -1,2 +1,16 @@
-git checkout dev
-git pull origin dev  # 确保本地 dev 与远程同步
+ame: Docker Image CI
+
+on:
+  pull_request:
+    branches: [ "main", "dev", "staging" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag python-calc-app:$(date +%s)
